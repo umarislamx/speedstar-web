@@ -78,7 +78,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="inline-flex min-h-11 items-center rounded-sm px-1 text-sm font-medium text-foreground transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="inline-flex min-h-11 items-center rounded-sm px-1 text-sm font-medium text-muted-links transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   {item.label}
                 </Link>
@@ -130,7 +130,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-links transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {item.label}
             </Link>

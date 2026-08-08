@@ -20,12 +20,57 @@ import { cn } from "@/lib/utils"
 const fieldClassName =
   "h-10 w-full rounded border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
+const errorFieldClassName =
+  "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
+
+type FormErrors = {
+  form?: string
+  name?: string
+  email?: string
+  message?: string
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false)
   const [subject, setSubject] = useState<ContactSubject>("General inquiry")
+  const [errors, setErrors] = useState<FormErrors>({})
+  const formErrorId = useId()
+  const nameErrorId = useId()
+  const emailErrorId = useId()
+  const messageErrorId = useId()
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const name = String(formData.get("name") ?? "").trim()
+    const email = String(formData.get("email") ?? "").trim()
+    const message = String(formData.get("message") ?? "").trim()
+
+    const nextErrors: FormErrors = {}
+
+    if (!name) nextErrors.name = "Please enter your name."
+    if (!email) {
+      nextErrors.email = "Please enter your email address."
+    } else if (!isValidEmail(email)) {
+      nextErrors.email = "Please enter a valid email address."
+    }
+    if (!message) nextErrors.message = "Please enter your message."
+
+    if (!name && !email && !message) {
+      nextErrors.form = "Please enter your details before submitting."
+    }
+
+    if (nextErrors.name || nextErrors.email || nextErrors.message) {
+      setErrors(nextErrors)
+      return
+    }
+
+    setErrors({})
     setSubmitted(true)
   }
 
@@ -43,6 +88,16 @@ export function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full min-w-0 space-y-5 sm:space-y-6" noValidate>
+      {errors.form ? (
+        <p
+          id={formErrorId}
+          role="alert"
+          className="text-sm leading-5 text-destructive"
+        >
+          {errors.form}
+        </p>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
         <div className="min-w-0 space-y-2">
           <label htmlFor="name" className="text-sm font-medium leading-none text-foreground">
@@ -54,9 +109,16 @@ export function ContactForm() {
             type="text"
             autoComplete="name"
             required
-            placeholder="e.g Umar Abdullah"
-            className={fieldClassName}
+            placeholder="Umar"
+            aria-invalid={errors.name ? true : undefined}
+            aria-describedby={errors.name ? nameErrorId : undefined}
+            className={cn(fieldClassName, errors.name && errorFieldClassName)}
           />
+          {errors.name ? (
+            <p id={nameErrorId} role="alert" className="text-sm leading-5 text-destructive">
+              {errors.name}
+            </p>
+          ) : null}
         </div>
 
         <div className="min-w-0 space-y-2">
@@ -70,8 +132,15 @@ export function ContactForm() {
             autoComplete="email"
             required
             placeholder="alex@example.com"
-            className={fieldClassName}
+            aria-invalid={errors.email ? true : undefined}
+            aria-describedby={errors.email ? emailErrorId : undefined}
+            className={cn(fieldClassName, errors.email && errorFieldClassName)}
           />
+          {errors.email ? (
+            <p id={emailErrorId} role="alert" className="text-sm leading-5 text-destructive">
+              {errors.email}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -91,8 +160,18 @@ export function ContactForm() {
           required
           rows={4}
           placeholder="Tell us what's on your mind..."
-          className="min-h-20 w-full resize-y rounded border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          aria-invalid={errors.message ? true : undefined}
+          aria-describedby={errors.message ? messageErrorId : undefined}
+          className={cn(
+            "min-h-20 w-full resize-y rounded border border-border bg-background px-3 py-2 text-sm leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+            errors.message && errorFieldClassName
+          )}
         />
+        {errors.message ? (
+          <p id={messageErrorId} role="alert" className="text-sm leading-5 text-destructive">
+            {errors.message}
+          </p>
+        ) : null}
       </div>
 
       <div className="pt-4">
