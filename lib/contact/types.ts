@@ -36,6 +36,7 @@ export type ContactApiError = {
     | "validation"
     | "turnstile"
     | "rate_limit"
+    | "not_configured"
     | "server"
     | "network"
 }

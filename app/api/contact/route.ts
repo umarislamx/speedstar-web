@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server"
 
+import { isContactBackendReady } from "@/lib/contact/config"
 import { sendContactAutoReply, sendContactNotification } from "@/lib/contact/email"
 import { getContactRateLimitStore } from "@/lib/contact/rate-limit"
 import { appendContactToSheet } from "@/lib/contact/sheets"
 import type { ContactApiResponse, ContactSubmission } from "@/lib/contact/types"
 import { verifyTurnstileToken } from "@/lib/contact/turnstile"
 import { validateContactForm } from "@/lib/contact/validation"
+import { contactEmail } from "@/lib/content/contact"
 import { siteConfig } from "@/lib/site"
 
 export const runtime = "nodejs"
@@ -98,6 +100,17 @@ export async function POST(request: Request) {
     )
   }
 
+  if (!isContactBackendReady()) {
+    return json(
+      {
+        ok: false,
+        message: `The contact backend is not connected yet. Please email us at ${contactEmail}.`,
+        code: "not_configured",
+      },
+      503
+    )
+  }
+
   const submission: ContactSubmission = {
     ...validation.data,
     website: siteConfig.url,
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Prefer notifying support + logging first; auto-reply is best-effort after.
+    // Notify support + log to Sheets first; auto-reply is best-effort after.
     await Promise.all([
       sendContactNotification(submission),
       appendContactToSheet(submission),

@@ -1,3 +1,5 @@
+export const contactEmail = "contact@speedstar.xyz"
+
 export const contactSubjects = [
   "General inquiry",
   "Bug report",

@@ -596,7 +596,7 @@ export const privacyDocument: LegalDocument = {
   contact: {
     title: "Contact",
     body: "If you have any questions about this Privacy Policy or our privacy practices, please contact us.",
-    email: "hello@speedstar.xyz",
+    email: "contact@speedstar.xyz",
   },
 }
 
@@ -942,6 +942,6 @@ export const termsDocument: LegalDocument = {
   contact: {
     title: "Contact",
     body: "If you have any questions about this Terms of Service or our privacy practices, please contact us.",
-    email: "hello@speedstar.xyz",
+    email: "contact@speedstar.xyz",
   },
 }
