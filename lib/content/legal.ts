@@ -27,8 +27,6 @@ export type LegalDocument = {
     title: string
     body: string
     email: string
-    websiteLabel: string
-    websiteHref: string
   }
 }
 
@@ -599,8 +597,6 @@ export const privacyDocument: LegalDocument = {
     title: "Contact",
     body: "If you have any questions about this Privacy Policy or our privacy practices, please contact us.",
     email: "hello@speedstar.xyz",
-    websiteLabel: "https://speedstar.xyz",
-    websiteHref: "https://speedstar.xyz",
   },
 }
 
@@ -945,9 +941,7 @@ export const termsDocument: LegalDocument = {
   ],
   contact: {
     title: "Contact",
-    body: "If you have any questions about this Privacy Policy or our privacy practices, please contact us.",
+    body: "If you have any questions about this Terms of Service or our privacy practices, please contact us.",
     email: "hello@speedstar.xyz",
-    websiteLabel: "https://speedstar.xyz",
-    websiteHref: "https://speedstar.xyz",
   },
 }

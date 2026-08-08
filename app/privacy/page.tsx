@@ -42,8 +42,6 @@ export default function PrivacyPage() {
           title={privacyDocument.contact.title}
           body={privacyDocument.contact.body}
           email={privacyDocument.contact.email}
-          websiteLabel={privacyDocument.contact.websiteLabel}
-          websiteHref={privacyDocument.contact.websiteHref}
           bodySize="sm"
         />
       </div>

@@ -35,9 +35,9 @@ export function ThemeToggle() {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       size="icon"
-      className="size-11 shrink-0 rounded-full border-border bg-background p-3"
+      className="size-9 shrink-0 border-0 bg-transparent p-2 text-muted-links opacity-50 shadow-none hover:bg-transparent hover:text-muted-links hover:opacity-80 dark:hover:bg-transparent"
       onClick={toggleTheme}
       aria-label={label}
       title={label}

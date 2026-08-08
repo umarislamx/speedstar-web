@@ -299,8 +299,6 @@ type LegalContactProps = {
   title: string
   body: string
   email: string
-  websiteLabel: string
-  websiteHref: string
   bodySize?: LegalBodySize
 }
 
@@ -308,8 +306,6 @@ export function LegalContact({
   title,
   body,
   email,
-  websiteLabel,
-  websiteHref,
   bodySize = "sm",
 }: LegalContactProps) {
   const headingId = "legal-contact-heading"
@@ -328,33 +324,17 @@ export function LegalContact({
       </h2>
       <div
         className={cn(
-          "space-y-5 pt-3 text-muted-foreground",
+          "space-y-3 pt-3 text-muted-foreground",
           legalBodyClassName[bodySize]
         )}
       >
         <p>{body}</p>
-        <div>
-          <p>
-            Email:{" "}
-            <a
-              href={`mailto:${email}`}
-              className="text-[#066eff] underline underline-offset-2"
-            >
-              {email}
-            </a>
-          </p>
-          <p>
-            Website:{" "}
-            <a
-              href={websiteHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#066eff] underline underline-offset-2"
-            >
-              {websiteLabel}
-            </a>
-          </p>
-        </div>
+        <p>
+          Email:{" "}
+          <a href={`mailto:${email}`} className="text-foreground">
+            {email}
+          </a>
+        </p>
       </div>
     </section>
   )

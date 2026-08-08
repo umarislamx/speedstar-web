@@ -42,8 +42,6 @@ export default function TermsPage() {
           title={termsDocument.contact.title}
           body={termsDocument.contact.body}
           email={termsDocument.contact.email}
-          websiteLabel={termsDocument.contact.websiteLabel}
-          websiteHref={termsDocument.contact.websiteHref}
           bodySize="sm"
         />
       </div>
