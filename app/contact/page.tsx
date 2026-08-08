@@ -17,7 +17,6 @@ export default function ContactPage() {
       eyebrow="Contact"
       title="Get in touch."
       description="We read every message and respond within one business day."
-      className="max-w-[576px]"
       headerClassName="mb-10 sm:mb-12"
       descriptionClassName="sm:pt-4 sm:text-base sm:leading-6 md:pt-4"
     >

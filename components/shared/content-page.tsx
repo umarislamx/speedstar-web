@@ -25,10 +25,10 @@ export function ContentPage({
   descriptionClassName,
 }: ContentPageProps) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col">
+    <div className="flex min-w-0 flex-1 flex-col px-4 py-12 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-20 lg:py-28">
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[672px] min-w-0 flex-1 flex-col px-4 py-12 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-20 lg:py-28",
+          "mx-auto flex w-full max-w-[672px] min-w-0 flex-1 flex-col",
           className
         )}
       >
