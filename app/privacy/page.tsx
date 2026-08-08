@@ -1,36 +1,51 @@
 import type { Metadata } from "next"
 
-import { ContentPage, LegalSection } from "@/components/shared/content-page"
-import { privacySections } from "@/lib/content/legal"
+import {
+  ContentPage,
+  LegalBlocks,
+  LegalContact,
+  LegalSection,
+} from "@/components/shared/content-page"
+import { privacyDocument } from "@/lib/content/legal"
 import { createPageMetadata } from "@/lib/metadata"
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Privacy Policy",
-  description:
-    "How SpeedStar collects, uses, and protects your information. Placeholder policy pending final legal content.",
+  title: privacyDocument.title,
+  description: privacyDocument.description,
   path: "/privacy",
 })
 
 export default function PrivacyPage() {
   return (
     <ContentPage
-      eyebrow="Legal"
-      title="Privacy Policy"
-      meta="Effective Date: August 5, 2026"
+      eyebrow={privacyDocument.eyebrow}
+      title={privacyDocument.title}
+      meta={privacyDocument.meta}
     >
-      <p className="text-base leading-6 text-muted-foreground">
-        Placeholder introduction — final Privacy Policy content will be added
-        later.
-      </p>
+      <div className="text-base leading-6 text-muted-foreground">
+        <LegalBlocks blocks={privacyDocument.intro} bodySize="base" />
+      </div>
 
-      <div className="pt-6">
-        {privacySections.map((title) => (
+      <div>
+        {privacyDocument.sections.map((section) => (
           <LegalSection
-            key={title}
-            id={title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
-            title={title}
-          />
+            key={section.id}
+            id={section.id}
+            title={section.title}
+            bodySize="base"
+          >
+            <LegalBlocks blocks={section.blocks} bodySize="base" />
+          </LegalSection>
         ))}
+
+        <LegalContact
+          title={privacyDocument.contact.title}
+          body={privacyDocument.contact.body}
+          email={privacyDocument.contact.email}
+          websiteLabel={privacyDocument.contact.websiteLabel}
+          websiteHref={privacyDocument.contact.websiteHref}
+          bodySize="sm"
+        />
       </div>
     </ContentPage>
   )
