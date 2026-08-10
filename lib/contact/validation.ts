@@ -53,6 +53,10 @@ export function validateContactForm(
     fields.message = "Please enter at least 10 characters."
   }
 
+  if (!name && !email && !message) {
+    fields.form = "Please enter your details before submitting."
+  }
+
   if (Object.keys(fields).length > 0) {
     return { ok: false, fields }
   }

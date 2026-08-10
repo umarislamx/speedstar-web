@@ -59,12 +59,9 @@ export const metadata: Metadata = {
       },
     ],
   },
-  icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-    shortcut: "/favicon.ico",
-    /** Placeholder — add `public/icons/apple-touch-icon.png` (180x180). */
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
-  },
+  // Favicons are provided by App Router file conventions:
+  // app/favicon.ico, app/icon.svg, app/apple-icon.png
+  // Avoid duplicating those declarations here.
   robots: {
     index: true,
     follow: true,
