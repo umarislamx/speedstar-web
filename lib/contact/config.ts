@@ -9,13 +9,20 @@ export function isContactEmailConfigured() {
 
 export function isContactSheetsConfigured() {
   return Boolean(
-    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
-      process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY &&
+    process.env.GCP_PROJECT_NUMBER &&
+      process.env.GCP_WORKLOAD_IDENTITY_POOL_ID &&
+      process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID &&
+      process.env.GCP_AUDIENCE &&
+      (process.env.GCP_SERVICE_ACCOUNT_EMAIL ||
+        process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL) &&
       process.env.GOOGLE_SHEETS_SPREADSHEET_ID
   )
 }
 
-/** Both email delivery and Google Sheets must be configured for a real submit. */
+/**
+ * Email delivery is required for a successful submit.
+ * Google Sheets is optional and appended best-effort when configured.
+ */
 export function isContactBackendReady() {
-  return isContactEmailConfigured() && isContactSheetsConfigured()
+  return isContactEmailConfigured()
 }

@@ -3,6 +3,11 @@ type TurnstileVerifyResponse = {
   "error-codes"?: string[]
 }
 
+/**
+ * Verifies a Cloudflare Turnstile token when Turnstile is configured.
+ * If TURNSTILE_SECRET_KEY is unset, verification is skipped so the contact
+ * form can still work (rate limiting still applies).
+ */
 export async function verifyTurnstileToken(options: {
   token: string
   ipAddress?: string
@@ -10,15 +15,13 @@ export async function verifyTurnstileToken(options: {
   const secret = process.env.TURNSTILE_SECRET_KEY
 
   if (!secret) {
-    if (process.env.NODE_ENV === "development") {
-      // Allow local UI work without Turnstile credentials.
-      return { ok: true }
+    // Turnstile is optional. Do not block submissions when it is not configured.
+    if (process.env.NODE_ENV === "production") {
+      console.warn(
+        "[contact] TURNSTILE_SECRET_KEY is not set; skipping Turnstile verification."
+      )
     }
-
-    return {
-      ok: false,
-      message: "Something went wrong. Please try again later.",
-    }
+    return { ok: true }
   }
 
   if (!options.token) {

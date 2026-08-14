@@ -89,32 +89,40 @@ export function ContactForm() {
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        credentials: "same-origin",
         body: JSON.stringify({
           ...validation.data,
           turnstileToken,
         }),
       })
 
-      const result = (await response.json()) as ContactApiResponse
+      const result = await parseContactApiResponse(response)
 
       if (!result.ok) {
         if (result.fields) {
           setErrors(result.fields)
         }
-        setFormError(
-          result.message ||
-            "We couldn't send your message right now. Please try again."
-        )
+        setFormError(messageForContactError(result))
         return
       }
 
       setSucceeded(true)
       resetForm()
-    } catch {
-      setFormError(
-        "Network error. Please check your connection and try again."
-      )
+    } catch (error) {
+      // Only true transport failures (offline, DNS, aborted request, etc.).
+      if (error instanceof TypeError) {
+        setFormError(
+          "Unable to connect. Please check your connection and try again."
+        )
+      } else {
+        setFormError(
+          "We couldn't send your message right now. Please try again."
+        )
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -250,6 +258,90 @@ export function ContactForm() {
       </div>
     </form>
   )
+}
+
+async function parseContactApiResponse(
+  response: Response
+): Promise<ContactApiResponse> {
+  const contentType = response.headers.get("content-type") ?? ""
+  const isJson = contentType.includes("application/json")
+
+  if (isJson) {
+    try {
+      return (await response.json()) as ContactApiResponse
+    } catch {
+      // Fall through to status-based mapping below.
+    }
+  } else {
+    // Drain the body so the connection can close cleanly.
+    try {
+      await response.text()
+    } catch {
+      // ignore
+    }
+  }
+
+  if (response.status === 429) {
+    return {
+      ok: false,
+      code: "rate_limit",
+      message: "Too many submissions. Please try again later.",
+    }
+  }
+
+  // Vercel Security Checkpoint / WAF challenge returns HTML 403.
+  if (response.status === 403) {
+    return {
+      ok: false,
+      code: "blocked",
+      message: "We couldn't send your message right now. Please try again.",
+    }
+  }
+
+  if (response.status >= 500) {
+    return {
+      ok: false,
+      code: "server",
+      message: "We couldn't send your message right now. Please try again.",
+    }
+  }
+
+  return {
+    ok: false,
+    code: "server",
+    message: "We couldn't send your message right now. Please try again.",
+  }
+}
+
+function messageForContactError(result: Extract<ContactApiResponse, { ok: false }>) {
+  switch (result.code) {
+    case "validation":
+      return (
+        result.message ||
+        "Please check the highlighted fields and try again."
+      )
+    case "turnstile":
+      return (
+        result.message ||
+        "Security verification failed. Please try again."
+      )
+    case "rate_limit":
+      return result.message || "Too many submissions. Please try again later."
+    case "not_configured":
+      return (
+        result.message ||
+        "We couldn't send your message right now. Please try again."
+      )
+    case "network":
+      return "Unable to connect. Please check your connection and try again."
+    case "blocked":
+    case "server":
+    default:
+      return (
+        result.message ||
+        "We couldn't send your message right now. Please try again."
+      )
+  }
 }
 
 type FieldProps = {

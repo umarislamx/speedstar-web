@@ -39,6 +39,7 @@ export type ContactApiError = {
     | "not_configured"
     | "server"
     | "network"
+    | "blocked"
 }
 
 export type ContactApiResponse = ContactApiSuccess | ContactApiError
