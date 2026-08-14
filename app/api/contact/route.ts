@@ -101,10 +101,13 @@ export async function POST(request: Request) {
   }
 
   if (!isContactBackendReady()) {
+    console.error(
+      "[contact] RESEND_API_KEY / CONTACT_TO_EMAIL not configured; rejecting submit."
+    )
     return json(
       {
         ok: false,
-        message: `The contact backend is not connected yet. Please email us at ${contactEmail}.`,
+        message: `We couldn't send your message right now. Please email us at ${contactEmail}.`,
         code: "not_configured",
       },
       503
@@ -121,23 +124,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Notify support + log to Sheets first; auto-reply is best-effort after.
-    await Promise.all([
-      sendContactNotification(submission),
-      appendContactToSheet(submission),
-    ])
-    await sendContactAutoReply(submission)
+    // Email delivery is required for success.
+    await sendContactNotification(submission)
   } catch (error) {
-    console.error("[contact] submission failed", error)
+    console.error("[contact] email notification failed", error)
     return json(
       {
         ok: false,
-        message:
-          "We couldn't send your message right now. Please try again in a moment.",
+        message: "We couldn't send your message right now. Please try again.",
         code: "server",
       },
       500
     )
+  }
+
+  // Sheets + auto-reply are best-effort and must not fail the user-facing submit.
+  try {
+    await appendContactToSheet(submission)
+  } catch (error) {
+    console.error("[contact] Google Sheets append failed", error)
+  }
+
+  try {
+    await sendContactAutoReply(submission)
+  } catch (error) {
+    console.error("[contact] auto-reply failed", error)
   }
 
   return json({ ok: true })

@@ -45,7 +45,7 @@ Form → client validation → Cloudflare Turnstile → API route
 
 Copy `.env.example` to `.env.local` and fill in the values below.
 
-Both Resend and Google Sheets must be configured before a submission is treated as successful. If either is missing, the API returns `not_configured` and the form does **not** show a fake success state.
+Resend must be configured before a submission is treated as successful. Google Sheets is appended best-effort after email send; missing Sheets config does not fail the user-facing submit.
 
 ### 1. Cloudflare Turnstile
 
@@ -73,23 +73,29 @@ On a successful submit, Resend sends:
 1. A formatted notification to `CONTACT_TO_EMAIL`
 2. An auto-reply to the visitor (`We've received your message`)
 
-### 3. Google Sheets
+### 3. Google Sheets (Vercel OIDC + Workload Identity Federation)
 
-1. Create a Google Cloud project and enable the **Google Sheets API**.
-2. Create a **service account** and download a JSON key.
-3. Create a spreadsheet with header row: `Timestamp | Name | Email | Subject | Message | Status`
-4. Share the spreadsheet with the service account email (Editor).
-5. Set:
-   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (escape newlines as `\\n`)
+Production authenticates with a short-lived Vercel OIDC token. Google STS exchanges it, then impersonates the existing service account. No JSON/PEM key is used.
+
+1. Enable **Google Sheets API**, **IAM Service Account Credentials API**, and **Security Token Service API**.
+2. Create a Workload Identity Pool (`vercel`) and an OIDC provider (`vercel`) that trusts `https://oidc.vercel.com/<team-slug>`.
+3. Grant the Vercel production subject **Workload Identity User** on the Sheets service account.
+4. Create a spreadsheet with header row: `Timestamp | Name | Email | Subject | Message`.
+5. Share the spreadsheet with the service account email (Editor).
+6. Enable OIDC on the Vercel project and set Production env vars:
+   - `GCP_PROJECT_NUMBER`
+   - `GCP_WORKLOAD_IDENTITY_POOL_ID`
+   - `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`
+   - `GCP_SERVICE_ACCOUNT_EMAIL`
+   - `GCP_AUDIENCE` (WIF provider default audience)
    - `GOOGLE_SHEETS_SPREADSHEET_ID`
-   - optional `GOOGLE_SHEETS_RANGE` (default `Sheet1!A:F`)
+   - optional `GOOGLE_SHEETS_RANGE` (default `Sheet1!A:E`)
 
-New rows are appended with `Status = New`.
+Local `next dev` does not receive a Vercel OIDC token, so Sheets append is skipped there. Each successful production submit appends exactly one new row (never overwrites).
 
 ### Security notes
 
-- Never commit `.env.local` or service-account JSON.
+- Never commit `.env.local` or long-lived Google credentials.
 - Secrets are server-only except `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 - Inputs are sanitized and validated on both client and server.
 
