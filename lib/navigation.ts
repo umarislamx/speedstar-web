@@ -2,7 +2,7 @@ import type { NavItem } from "@/types/navigation"
 
 /** Figma header: Speed Test · About · Support */
 export const headerNav: NavItem[] = [
-  { label: "Speed Test", href: "/" },
+  { label: "Speed Test", href: "/speed-test" },
   { label: "About", href: "/about" },
   { label: "Support", href: "/support" },
 ]
