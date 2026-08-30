@@ -6,6 +6,8 @@ export type ContactFormValues = {
   subject: ContactSubject | ""
   message: string
   turnstileToken: string
+  /** Hidden honeypot. Must stay empty for a legitimate submit. */
+  hpWebsite: string
 }
 
 export type ContactFieldErrors = Partial<

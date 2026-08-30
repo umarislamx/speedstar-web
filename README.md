@@ -38,8 +38,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The `/contact` page posts to `POST /api/contact` with this flow:
 
 ```
-Form → client validation → Cloudflare Turnstile → API route
-  → rate limit → server validation → Resend (notify + auto-reply)
+Form → client validation → POST /api/contact
+  → honeypot
+  → Cloudflare Turnstile (server-side)
+  → rate limit (IP, then email)
+  → server validation
+  → Resend (notify + auto-reply)
   → Google Sheets append
 ```
 
@@ -47,16 +51,23 @@ Copy `.env.example` to `.env.local` and fill in the values below.
 
 Resend must be configured before a submission is treated as successful. Google Sheets is appended best-effort after email send; missing Sheets config does not fail the user-facing submit.
 
-### 1. Cloudflare Turnstile
+Invalid or suspicious submissions are not written to Sheets and do not send email.
+
+### 1. Cloudflare Turnstile (required in production)
+
+Production **rejects every submission** if `TURNSTILE_SECRET_KEY` is missing. Bots cannot skip the widget and POST to the API directly.
 
 1. Open [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile).
 2. Create a widget (prefer **Invisible**).
-3. Add your local and production domains.
-4. Set:
-   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
-   - `TURNSTILE_SECRET_KEY`
+3. Add your production domain (and `localhost` if you want the widget locally).
+4. Set both keys in Vercel (Production, and Preview if you test there):
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (public)
+   - `TURNSTILE_SECRET_KEY` (server-only — never commit this)
+5. Redeploy so the new env vars are available.
 
-In local development, submissions still validate if Turnstile keys are missing.
+Local `next dev` still accepts submissions if Turnstile keys are missing. `next start` and Vercel do not.
+
+See `docs/contact-form-setup.md` for the full checklist.
 
 ### 2. Resend
 

@@ -3,28 +3,44 @@ type TurnstileVerifyResponse = {
   "error-codes"?: string[]
 }
 
+const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
+/** Local `next dev` only. Production and `next start` always require verification. */
+export function isTurnstileVerificationOptional(
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  return env.NODE_ENV === "development" && !env.TURNSTILE_SECRET_KEY?.trim()
+}
+
 /**
- * Verifies a Cloudflare Turnstile token when Turnstile is configured.
- * If TURNSTILE_SECRET_KEY is unset, verification is skipped so the contact
- * form can still work (rate limiting still applies).
+ * Verifies a Cloudflare Turnstile token server-side.
+ *
+ * Production (and `next start`) fail closed: missing secret, missing token,
+ * or Cloudflare rejection all block the submission.
+ * Local `next dev` may skip verification only when no secret is configured,
+ * so the form remains usable without Turnstile keys on a laptop.
  */
 export async function verifyTurnstileToken(options: {
   token: string
   ipAddress?: string
 }): Promise<{ ok: true } | { ok: false; message: string }> {
-  const secret = process.env.TURNSTILE_SECRET_KEY
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim()
 
   if (!secret) {
-    // Turnstile is optional. Do not block submissions when it is not configured.
-    if (process.env.NODE_ENV === "production") {
-      console.warn(
-        "[contact] TURNSTILE_SECRET_KEY is not set; skipping Turnstile verification."
-      )
+    if (isTurnstileVerificationOptional()) {
+      return { ok: true }
     }
-    return { ok: true }
+
+    console.error(
+      "[contact] TURNSTILE_SECRET_KEY is not set; rejecting submission."
+    )
+    return {
+      ok: false,
+      message: "Security verification is unavailable. Please try again later.",
+    }
   }
 
-  if (!options.token) {
+  if (!options.token.trim()) {
     return {
       ok: false,
       message: "Please complete the security check and try again.",
@@ -41,14 +57,12 @@ export async function verifyTurnstileToken(options: {
   }
 
   try {
-    const response = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      }
-    )
+    const response = await fetch(SITEVERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      signal: AbortSignal.timeout(8000),
+    })
 
     if (!response.ok) {
       return {

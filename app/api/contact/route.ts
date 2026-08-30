@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { isContactBackendReady } from "@/lib/contact/config"
 import { sendContactAutoReply, sendContactNotification } from "@/lib/contact/email"
+import { isHoneypotFilled } from "@/lib/contact/honeypot"
 import { getContactRateLimitStore } from "@/lib/contact/rate-limit"
 import { appendContactToSheet } from "@/lib/contact/sheets"
 import type { ContactApiResponse, ContactSubmission } from "@/lib/contact/types"
@@ -12,21 +13,40 @@ import { siteConfig } from "@/lib/site"
 
 export const runtime = "nodejs"
 
+/**
+ * Prefer platform-assigned client IPs. `x-forwarded-for` is last because
+ * the left-most hop can be set by the caller.
+ */
 function getClientIp(request: Request): string | undefined {
-  const forwarded = request.headers.get("x-forwarded-for")
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || undefined
-  }
+  const header = (name: string) => request.headers.get(name)?.split(",")[0]?.trim()
 
   return (
-    request.headers.get("x-real-ip") ??
-    request.headers.get("cf-connecting-ip") ??
+    header("cf-connecting-ip") ||
+    header("x-real-ip") ||
+    header("x-vercel-forwarded-for") ||
+    header("x-forwarded-for") ||
     undefined
   )
 }
 
-function json(body: ContactApiResponse, status = 200) {
-  return NextResponse.json(body, { status })
+function json(
+  body: ContactApiResponse,
+  status = 200,
+  headers?: HeadersInit
+) {
+  return NextResponse.json(body, { status, headers })
+}
+
+function asRecord(body: unknown): Record<string, unknown> {
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    return body as Record<string, unknown>
+  }
+  return {}
+}
+
+function readString(payload: Record<string, unknown>, key: string): string {
+  const value = payload[key]
+  return typeof value === "string" ? value : ""
 }
 
 export async function POST(request: Request) {
@@ -45,14 +65,55 @@ export async function POST(request: Request) {
     )
   }
 
-  const payload = (body ?? {}) as Record<string, unknown>
+  const payload = asRecord(body)
+
+  // 1) Honeypot — silently discard. Do not persist or notify.
+  if (isHoneypotFilled(payload)) {
+    console.info("[contact] discarded honeypot submission")
+    return json({ ok: true })
+  }
+
+  const ipAddress = getClientIp(request)
+  const store = getContactRateLimitStore()
+
+  // 2) Bot verification — enforced server-side (fail-closed outside `next dev`).
+  const turnstile = await verifyTurnstileToken({
+    token: readString(payload, "turnstileToken"),
+    ipAddress,
+  })
+
+  if (!turnstile.ok) {
+    return json(
+      {
+        ok: false,
+        message: turnstile.message,
+        code: "turnstile",
+      },
+      400
+    )
+  }
+
+  // 3) Rate limit the endpoint itself (IP), before validation work.
+  const ipLimit = await store.consume(`contact:ip:${ipAddress ?? "unknown"}`)
+
+  if (!ipLimit.allowed) {
+    return json(
+      {
+        ok: false,
+        message: "Too many submissions. Please try again later.",
+        code: "rate_limit",
+      },
+      429,
+      { "Retry-After": String(ipLimit.retryAfterSeconds) }
+    )
+  }
+
+  // 4) Server-side field validation.
   const validation = validateContactForm({
-    name: typeof payload.name === "string" ? payload.name : "",
-    email: typeof payload.email === "string" ? payload.email : "",
-    subject: typeof payload.subject === "string" ? payload.subject : "",
-    message: typeof payload.message === "string" ? payload.message : "",
-    turnstileToken:
-      typeof payload.turnstileToken === "string" ? payload.turnstileToken : "",
+    name: readString(payload, "name"),
+    email: readString(payload, "email"),
+    subject: readString(payload, "subject"),
+    message: readString(payload, "message"),
   })
 
   if (!validation.ok) {
@@ -67,36 +128,19 @@ export async function POST(request: Request) {
     )
   }
 
-  const ipAddress = getClientIp(request)
-  const rateLimitKey = `contact:${ipAddress ?? "unknown"}`
-  const rateLimit = await getContactRateLimitStore().consume(rateLimitKey)
+  const emailLimit = await store.consume(
+    `contact:email:${validation.data.email}`
+  )
 
-  if (!rateLimit.allowed) {
+  if (!emailLimit.allowed) {
     return json(
       {
         ok: false,
         message: "Too many submissions. Please try again later.",
         code: "rate_limit",
       },
-      429
-    )
-  }
-
-  const turnstileToken =
-    typeof payload.turnstileToken === "string" ? payload.turnstileToken : ""
-  const turnstile = await verifyTurnstileToken({
-    token: turnstileToken,
-    ipAddress,
-  })
-
-  if (!turnstile.ok) {
-    return json(
-      {
-        ok: false,
-        message: turnstile.message,
-        code: "turnstile",
-      },
-      400
+      429,
+      { "Retry-After": String(emailLimit.retryAfterSeconds) }
     )
   }
 
@@ -124,7 +168,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Email delivery is required for success.
     await sendContactNotification(submission)
   } catch (error) {
     console.error("[contact] email notification failed", error)
@@ -138,7 +181,6 @@ export async function POST(request: Request) {
     )
   }
 
-  // Sheets + auto-reply are best-effort and must not fail the user-facing submit.
   try {
     await appendContactToSheet(submission)
   } catch (error) {

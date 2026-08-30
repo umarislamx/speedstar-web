@@ -7,12 +7,17 @@ const globalForRateLimit = globalThis as typeof globalThis & {
   __speedstarContactRateLimit?: RateLimitStore
 }
 
-/** 5 submissions per IP per 15 minutes. */
+export const CONTACT_RATE_LIMIT = {
+  limit: 5,
+  windowMs: 15 * 60 * 1000,
+} as const
+
+/** 5 submissions per key per 15 minutes (IP and email are checked separately). */
 export function getContactRateLimitStore(): RateLimitStore {
   if (!globalForRateLimit.__speedstarContactRateLimit) {
     globalForRateLimit.__speedstarContactRateLimit = createMemoryRateLimitStore({
-      limit: 5,
-      windowMs: 15 * 60 * 1000,
+      limit: CONTACT_RATE_LIMIT.limit,
+      windowMs: CONTACT_RATE_LIMIT.windowMs,
     })
   }
 

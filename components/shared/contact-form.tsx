@@ -37,6 +37,7 @@ export function ContactForm() {
   const [subject, setSubject] = useState<ContactSubject>("General inquiry")
   const [message, setMessage] = useState("")
   const [turnstileToken, setTurnstileToken] = useState("")
+  const [hpWebsite, setHpWebsite] = useState("")
   const [errors, setErrors] = useState<ContactFieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,6 +50,7 @@ export function ContactForm() {
     setSubject("General inquiry")
     setMessage("")
     setTurnstileToken("")
+    setHpWebsite("")
     setErrors({})
     setFormError(null)
   }
@@ -97,6 +99,7 @@ export function ContactForm() {
         body: JSON.stringify({
           ...validation.data,
           turnstileToken,
+          hpWebsite,
         }),
       })
 
@@ -164,7 +167,7 @@ export function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full min-w-0 space-y-5 sm:space-y-6"
+      className="relative w-full min-w-0 space-y-5 sm:space-y-6"
       noValidate
       aria-describedby={formError ? statusId : undefined}
     >
@@ -233,6 +236,18 @@ export function ContactForm() {
           )}
         />
       </Field>
+
+      <div hidden aria-hidden="true" className="hidden">
+        <input
+          id="hp-website"
+          name="hp_website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={hpWebsite}
+          onChange={(event) => setHpWebsite(event.target.value)}
+        />
+      </div>
 
       <TurnstileField
         onToken={setTurnstileToken}
