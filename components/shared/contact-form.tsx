@@ -189,7 +189,7 @@ export function ContactForm() {
       ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4">
-        <Field id="name" label="Name" error={errors.name}>
+        <Field id="name" label="Full name" error={errors.name}>
           <input
             id="name"
             name="name"
@@ -197,14 +197,14 @@ export function ContactForm() {
             autoComplete="name"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Umar"
+            placeholder="Umar Islam"
             aria-invalid={Boolean(errors.name) || undefined}
             aria-describedby={errors.name ? "name-error" : undefined}
             className={cn(fieldClassName, errors.name && fieldErrorClassName)}
           />
         </Field>
 
-        <Field id="email" label="Email" error={errors.email}>
+        <Field id="email" label="Work email" error={errors.email}>
           <input
             id="email"
             name="email"
@@ -213,7 +213,7 @@ export function ContactForm() {
             inputMode="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="alex@example.com"
+            placeholder="umar@company.com"
             aria-invalid={Boolean(errors.email) || undefined}
             aria-describedby={errors.email ? "email-error" : undefined}
             className={cn(fieldClassName, errors.email && fieldErrorClassName)}
