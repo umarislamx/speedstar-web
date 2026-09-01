@@ -1,5 +1,6 @@
 "use client"
 
+import type { TurnstileInstance } from "@marsidev/react-turnstile"
 import { Check, ChevronDown } from "lucide-react"
 import {
   useEffect,
@@ -43,6 +44,7 @@ export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [succeeded, setSucceeded] = useState(false)
   const statusId = useId()
+  const turnstileRef = useRef<TurnstileInstance | undefined>(undefined)
 
   function resetForm() {
     setName("")
@@ -79,8 +81,13 @@ export function ContactForm() {
     const turnstileConfigured = Boolean(
       process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
     )
-    if (turnstileConfigured && !turnstileToken) {
+    const widgetToken = turnstileRef.current?.getResponse()?.trim() ?? ""
+    const token = turnstileToken.trim() || widgetToken
+    if (turnstileConfigured && !token) {
       setFormError("Please complete the security check and try again.")
+      document
+        .getElementById("contact-turnstile")
+        ?.scrollIntoView({ block: "center", behavior: "smooth" })
       return
     }
 
@@ -98,7 +105,7 @@ export function ContactForm() {
         credentials: "same-origin",
         body: JSON.stringify({
           ...validation.data,
-          turnstileToken,
+          turnstileToken: token,
           hpWebsite,
         }),
       })
@@ -250,6 +257,7 @@ export function ContactForm() {
       </div>
 
       <TurnstileField
+        ref={turnstileRef}
         onToken={setTurnstileToken}
         onExpire={() => setTurnstileToken("")}
         onError={() =>
