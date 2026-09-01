@@ -13,17 +13,32 @@ type MemoryRateLimitOptions = {
 }
 
 /**
- * In-memory rate limiter suitable for single-instance deployments.
+ * In-memory rate limiter suitable for a single Node process.
+ * On Vercel this is per-instance; Turnstile is the cross-instance control.
  * Swap this store for Redis/Upstash later via the RateLimitStore interface.
  */
 export function createMemoryRateLimitStore(
   options: MemoryRateLimitOptions
 ): RateLimitStore {
   const buckets = new Map<string, Bucket>()
+  let consumes = 0
+
+  function evictExpired(now: number) {
+    for (const [key, bucket] of buckets) {
+      if (bucket.resetAt <= now) {
+        buckets.delete(key)
+      }
+    }
+  }
 
   return {
     consume(key: string): RateLimitResult {
       const now = Date.now()
+      consumes += 1
+      if (consumes % 64 === 0) {
+        evictExpired(now)
+      }
+
       const existing = buckets.get(key)
 
       if (!existing || existing.resetAt <= now) {
