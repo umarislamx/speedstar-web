@@ -67,7 +67,7 @@ export function instantaneousMbps(bytesDelta: number, elapsedMs: number): number
 export function cumulativeMbps(
   measuredBytes: number,
   measuredMs: number,
-  minLiveMs = SPEED_TEST_CONFIG.liveCumulativeMinMs
+  minLiveMs: number = SPEED_TEST_CONFIG.liveCumulativeMinMs
 ): number {
   if (measuredBytes <= 0 || measuredMs < minLiveMs) {
     return 0
